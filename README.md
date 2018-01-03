@@ -1,9 +1,9 @@
 # dbus-pvoutput
 
-This is a simple python script that collects data from dbus and posts it to
-pvoutput.org. This is mostly a proof of concept designed to work on my
-particular single-phase setup. Extending for other systems is left as an
-exercise to the user.
+This is a simple python script that collects data from dbus on your CCGX
+or Venus-GX, and posts it to pvoutput.org. This is mostly a proof of concept
+designed to work on my particular single-phase setup. Extending for other
+systems is left as an exercise to the user.
 
 ## Assumptions, shortcuts and todos
 
