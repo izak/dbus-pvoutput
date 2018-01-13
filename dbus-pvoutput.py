@@ -45,7 +45,7 @@ def unwrap_dbus_value(val):
         return int(val)
     if isinstance(val, dbus.Double):
         return float(val)
-    return val
+    return None
 
 def set_state(state, key, v):
     state[key] = value = unwrap_dbus_value(v["Value"])
@@ -110,8 +110,8 @@ def main():
 
     # Periodic work
     def _upload():
-        energy_generated = sum(generators.values())
-        energy_consumed = sum(consumers.values())
+        energy_generated = sum(filter(None, generators.itervalues()))
+        energy_consumed = sum(filter(None, consumers.itervalues()))
 
         logger.info("EG: %.2f, EC: %.2f, PG: %.2f, PC: %.2f", energy_generated,
             energy_consumed, stats.pg, stats.pc)
