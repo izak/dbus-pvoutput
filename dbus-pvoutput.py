@@ -127,12 +127,14 @@ def main():
             "v4": int(stats.pc),
             "c1": 1
         }
-        result = requests.post(PVOUTPUT,
-            headers={
-                "X-Pvoutput-Apikey": APIKEY,
-                "X-Pvoutput-SystemId": SYSTEMID
-            }, data=payload)
-        print result
+        try:
+            requests.post(PVOUTPUT,
+                headers={
+                    "X-Pvoutput-Apikey": APIKEY,
+                    "X-Pvoutput-SystemId": SYSTEMID
+                }, data=payload)
+        except:
+            pass
 
         return True
 
