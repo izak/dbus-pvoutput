@@ -107,6 +107,8 @@ def main():
     # Track power values
     track(conn, stats, "com.victronenergy.system", "/Ac/Consumption/L1/Power", "pc")
     track(conn, stats, "com.victronenergy.system", "/Dc/Pv/Power", "pg")
+    # Track battery volts, from battery to input and output
+    track(conn, stats, "com.victronenergy.system", "/Dc/Battery/Voltage", "v6")
 
     # Periodic work
     def _upload():
@@ -125,6 +127,7 @@ def main():
             "v2": int(stats.pg),
             "v3": int(energy_consumed*1000),
             "v4": int(stats.pc),
+            "v6": int(stats.v6),
             "c1": 1
         }
         try:
