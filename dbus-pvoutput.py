@@ -10,6 +10,8 @@ from dbus.mainloop.glib import DBusGMainLoop
 import gobject
 import ConfigParser
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -34,6 +36,25 @@ def get_api_key(config):
 
 def get_city_id(config):    
     return config.get('openweathermap','cityid')
+# https://www.peterbe.com/plog/best-practice-with-retries-with-requests
+def requests_retry_session(
+    retries=3,
+    backoff_factor=0.3,
+    status_forcelist=(500, 502, 504),
+    session=None,
+):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
 
 def get_weather(api_key, city_id):
     url = "https://api.openweathermap.org/data/2.5/weather?id={}&units=metric&appid={}".format(city_id, api_key)    
@@ -85,6 +106,8 @@ def track(conn, state, service, path, target):
             signal_name='PropertiesChanged',
             path=path,
             bus_name=service)
+
+
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -190,7 +213,7 @@ def main():
             }
         
         try:            
-            requests.post(PVOUTPUT,
+            requests_retry_session().post(PVOUTPUT,
                 headers={
                     "X-Pvoutput-Apikey": APIKEY,
                     "X-Pvoutput-SystemId": SYSTEMID
