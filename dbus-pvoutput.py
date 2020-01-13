@@ -36,7 +36,7 @@ def get_api_key(config):
 
 def get_city_id(config):    
     return config.get('openweathermap','cityid')
-# https://www.peterbe.com/plog/best-practice-with-retries-with-requests
+
 def requests_retry_session(
     retries=3,
     backoff_factor=0.3,
@@ -174,8 +174,12 @@ def main():
     # Periodic work
     def _upload():
 
-        if useweather == 1:        
-            weather = get_weather(api_key, city_id)        	   
+        if useweather == 1:
+            try:        
+              weather = get_weather(api_key, city_id)
+            except:
+              weather = None
+              pass	   
         else:
             weather = None
 
