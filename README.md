@@ -1,9 +1,9 @@
 # dbus-pvoutput
 
-This is a simple python script that collects data from dbus on your CCGX
-or Venus-GX, and posts it to pvoutput.org. This is mostly a proof of concept
-designed to work on my particular single-phase setup. Extending for other
-systems is left as an exercise to the user.
+This is a simple python script that collects data from dbus on your Victron
+CCGX or Venus-GX, and posts it to pvoutput.org. This is mostly a proof of 
+concept designed to work on my particular single-phase setup. Extending for 
+other systems is left as an exercise to the user.
 
 ## Assumptions, shortcuts and todos
 
@@ -17,4 +17,6 @@ systems is left as an exercise to the user.
 
 * It uses the timezone information from the CCGX settings, not the system
   timezone.
-* For now, you have to add your APIKEY and SYSTEMID in the code.
+* You have to add your APIKEY and SYSTEMID in the config.ini
+* If you want to enable weather information, register on 
+  openweathermap.org then add apikey and cityid in config.ini
