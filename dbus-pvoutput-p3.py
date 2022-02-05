@@ -11,7 +11,6 @@ from gi.repository import GLib as glib
 import configparser
 import requests
 from requests.adapters import HTTPAdapter
-#from requests.packages.urllib3.util.retry import Retry
 from urllib3.util import Retry
 
 logger = logging.getLogger(__name__)
