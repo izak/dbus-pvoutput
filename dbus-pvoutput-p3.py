@@ -1,13 +1,13 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
 
-import sys, time, os
+import time, os
 import logging
 from functools import partial
 from collections.abc import Mapping
 from datetime import datetime
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import GLib as glib
+from gi.repository import GLib
 import configparser
 import requests
 from requests.adapters import HTTPAdapter
@@ -16,25 +16,25 @@ from urllib3.util import Retry
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-def get_weather_active(config):    
+def get_weather_active(config):
     return config.get('dvoutput.org','useweather')
 
-def get_interval(config):    
+def get_interval(config):
     return config.get('dvoutput.org','INTERVAL')
 
-def get_pvoutput(config):    
+def get_pvoutput(config):
     return config.get('dvoutput.org','PVOUTPUT')
 
-def get_pvoutput_api(config):    
+def get_pvoutput_api(config):
     return config.get('dvoutput.org','APIKEY')
 
-def get_pvoutput_systemid(config):   
+def get_pvoutput_systemid(config):
     return config.get('dvoutput.org','SYSTEMID')
 
-def get_api_key(config):    
+def get_api_key(config):
     return config.get('openweathermap','api')
 
-def get_city_id(config):    
+def get_city_id(config):
     return config.get('openweathermap','cityid')
 
 def requests_retry_session(
@@ -95,23 +95,27 @@ def unwrap_dbus_value(val):
     return None
 
 def set_state(state, key, v):
-    state[key] = value = unwrap_dbus_value(v["Value"])
+    value = unwrap_dbus_value(v["Value"])
+    state[key] = value
+
+def _on_dbus_items_changed( path, target, state, items):
+    if (path in items.keys()):
+        value = items[path]
+        set_state(state, target, value)
 
 def query(conn, service, path):
     return conn.call_blocking(service, path, None, "GetValue", '', [])
 
 def track(conn, state, service, path, target):
     # Initialise state
-    state[target] = value = unwrap_dbus_value(query(conn, service, path))
-
+    value = unwrap_dbus_value(query(conn, service, path))
+    state[target] = value
     # And track it
-    conn.add_signal_receiver(partial(set_state, state, target),
-            dbus_interface='com.victronenergy.BusItem',
-            signal_name='PropertiesChanged',
-            path=path,
-            bus_name=service)
-
-
+    conn.add_signal_receiver(partial(_on_dbus_items_changed, path, target, state),
+			dbus_interface='com.victronenergy.BusItem',
+			signal_name='ItemsChanged',
+            path='/'
+            )
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -124,8 +128,7 @@ def main():
     if useweather == 1:
         weather = get_weather(api_key, city_id)
     else:
-        weather = None    
-    #print(weather) 
+        weather = None
 
     INTERVAL=int(get_interval(config))
     PVOUTPUT=get_pvoutput(config)
@@ -180,22 +183,22 @@ def main():
     def _upload():
 
         if useweather == 1:
-            try:        
+            try:
               weather = get_weather(api_key, city_id)
             except:
               weather = None
-              pass	   
+              pass
         else:
             weather = None
 
         energy_generated = sum(filter(None, generators.values()))
-        energy_consumed = sum(filter(None, consumers.values()))    
+        energy_consumed = sum(filter(None, consumers.values()))
 
         logger.info("EG: %.2f, EC: %.2f, PG: %.2f, PC: %.2f, VO: %.2f", energy_generated,
             energy_consumed, stats.pg, stats.pc, voltages.vo)
 
         # Post the values to pvoutput
-        now = datetime.now()        
+        now = datetime.now()
 
         if (weather is not None):
             payload = {
@@ -216,26 +219,27 @@ def main():
                 "v1": int(energy_generated*1000),
                 "v2": int(stats.pg),
                 "v3": int(energy_consumed*1000),
-                "v4": int(stats.pc),     
-                "v6": float(voltages.vo),           
+                "v4": int(stats.pc),
+                "v6": float(voltages.vo),
                 "c1": 1
             }
         
-        try:            
+        try:
             result = requests_retry_session().post(PVOUTPUT,
                 headers={
                     "X-Pvoutput-Apikey": APIKEY,
                     "X-Pvoutput-SystemId": SYSTEMID
-                }, data=payload)           
-        except:
-            print("Fail on Post")
+                }, data=payload)
+        except: 
             pass
+
         return True
 
     _upload()
-    glib.timeout_add(INTERVAL, _upload)
+    GLib.timeout_add(INTERVAL, _upload)
 
-    glib.MainLoop().run()
+    mainloop = GLib.MainLoop()
+    mainloop.run()
 
 if __name__ == "__main__":
     main()
